@@ -124,6 +124,10 @@
             font-size: 0.9rem;
         }
 
+        .form-section input[type="file"] {
+            padding: 0.3rem;
+        }
+
         .form-section button {
             width: 100%;
             padding: 0.6rem;
@@ -384,6 +388,10 @@
                 font-size: 1rem;
             }
 
+            .form-section input[type="file"] {
+                padding: 0.5rem;
+            }
+
             .product-item {
                 flex-direction: row;
                 align-items: center;
@@ -483,7 +491,7 @@
             <div class="form-section">
                 <input type="text" id="productName" placeholder="Nombre del producto">
                 <input type="number" id="productPrice" placeholder="Precio (Q)" step="0.01">
-                <input type="text" id="productImage" placeholder="URL de la imagen">
+                <input type="file" id="productImage" accept="image/*">
                 <button onclick="addProduct()">Agregar Producto</button>
             </div>
             <div class="product-list" id="productList"></div>
@@ -568,25 +576,40 @@
         function addProduct() {
             const name = document.getElementById('productName').value.trim();
             const price = document.getElementById('productPrice').value;
-            const image = document.getElementById('productImage').value.trim();
+            const imageInput = document.getElementById('productImage');
+            const file = imageInput.files[0];
 
-            if (name && price && image) {
-                const parsedPrice = parseFloat(price);
-                if (isNaN(parsedPrice) || parsedPrice <= 0) {
-                    alert('Por favor, ingresa un precio válido mayor a 0.');
-                    return;
-                }
-                products.push({ name, price: parsedPrice, image });
-                localStorage.setItem('products', JSON.stringify(products));
-                displayProductsGestion();
-                displayProductsTienda();
-                document.getElementById('productName').value = '';
-                document.getElementById('productPrice').value = '';
-                document.getElementById('productImage').value = '';
-                alert('Producto agregado con éxito.');
-            } else {
+            if (!name || !price || !file) {
                 alert('Por favor, completa todos los campos correctamente.');
+                return;
             }
+
+            const parsedPrice = parseFloat(price);
+            if (isNaN(parsedPrice) || parsedPrice <= 0) {
+                alert('Por favor, ingresa un precio válido mayor a 0.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageDataUrl = e.target.result;
+                products.push({ name, price: parsedPrice, image: imageDataUrl });
+                try {
+                    localStorage.setItem('products', JSON.stringify(products));
+                    displayProductsGestion();
+                    displayProductsTienda();
+                    document.getElementById('productName').value = '';
+                    document.getElementById('productPrice').value = '';
+                    imageInput.value = '';
+                    alert('Producto agregado con éxito.');
+                } catch (e) {
+                    alert('Error al guardar el producto. La imagen puede ser demasiado grande para localStorage.');
+                }
+            };
+            reader.onerror = function() {
+                alert('Error al leer la imagen. Por favor, intenta con otra imagen.');
+            };
+            reader.readAsDataURL(file);
         }
 
         function deleteProduct(index) {
